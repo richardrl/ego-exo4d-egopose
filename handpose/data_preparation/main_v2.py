@@ -12,7 +12,11 @@ from tqdm import tqdm
 from utils.config import create_arg_parse
 from utils.reader import PyAvReader
 from utils.utils import extract_aria_calib_to_json, get_ego_aria_cam_name
+import glob
+import os
 
+def sort_f(filepath):
+    return int(os.path.basename(filepath).split(".jpg")[0])
 
 def undistort_aria_img(args):
     # Load all takes metadata
@@ -48,9 +52,24 @@ def undistort_aria_img(args):
         if not os.path.exists(curr_aria_calib_json_path):
             print(f"No Aria calib json for {take_name}. Skipped.")
             continue
-        aria_rgb_calib = calibration.device_calibration_from_json(
-            curr_aria_calib_json_path
+
+        # modify it to have the right focal length
+        aria_json = json.load(open(curr_aria_calib_json_path))
+
+        # 1404 original image
+        # 448 new image
+        # f
+        aria_json['CameraCalibrations'][4]['Projection']['Params'][0] = aria_json['CameraCalibrations'][4]['Projection']['Params'][0] * (1/3.13392857)
+
+        # cx, cy
+        aria_json['CameraCalibrations'][4]['Projection']['Params'][1] = 224
+        aria_json['CameraCalibrations'][4]['Projection']['Params'][2] = 224
+
+        aria_rgb_calib = calibration.device_calibration_from_json_string(
+            json.dumps(aria_json)
         ).get_camera_calib("camera-rgb")
+
+
         pinhole = calibration.get_linear_camera_calibration(512, 512, 150)
         # Input and output directory
         curr_dist_img_dir = os.path.join(dist_img_root, take_name)
@@ -61,13 +80,15 @@ def undistort_aria_img(args):
         #     continue
         curr_undist_img_dir = os.path.join(undist_img_root, take_name)
         os.makedirs(curr_undist_img_dir, exist_ok=True)
-        # Extract undistorted aria images
-        import pdb
-        pdb.set_trace()
 
 
-        for frame_number in tqdm(take_anno.keys(), total=len(take_anno.keys())):
-            f_idx = int(frame_number)
+        # undistort aria images
+        # load frames
+
+        sorted_jpgs = sorted(glob.glob(os.path.join(dist_img_root, take_name, "[0-9]*.jpg")), key=sort_f)
+
+        for jpg_idx, curr_dist_img_path in tqdm(enumerate(sorted_jpgs)):
+            f_idx = jpg_idx + 1
             curr_undist_img_path = os.path.join(
                 curr_undist_img_dir, f"{f_idx:06d}.jpg"
             )
@@ -86,6 +107,8 @@ def undistort_aria_img(args):
                     if args.portrait_view
                     else curr_dist_image
                 )
+
+
                 # Undistortion
                 undistorted_image = calibration.distort_by_calibration(
                     curr_dist_image, pinhole, aria_rgb_calib
@@ -99,7 +122,6 @@ def undistort_aria_img(args):
                 assert cv2.imwrite(
                     curr_undist_img_path, undistorted_image[:, :, ::-1]
                 ), curr_undist_img_path
-
 
 def decode_video(video_path, save_dir):
     os.makedirs(save_dir, exist_ok=True)
@@ -315,7 +337,7 @@ def main(args):
             create_gt_anno(args)
         elif step == "extract_aria_img":
             extract_aria_img(args)
-        elif step == "undistorted_image":
+        elif step == "undistort_aria_img":
             undistort_aria_img(args)
         else:
             raise NotImplementedError
