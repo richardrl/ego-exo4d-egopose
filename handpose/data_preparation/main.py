@@ -23,7 +23,7 @@ def undistort_aria_img(args):
             # Load GT annotation
             gt_anno_path = os.path.join(
                 args.gt_output_dir,
-                "annotation",
+                "annotations",
                 anno_type,
                 f"ego_pose_gt_anno_{split}_public.json",
             )
@@ -70,6 +70,7 @@ def undistort_aria_img(args):
                         f"[Warning] No extracted raw aria images found at {curr_dist_img_dir}. Skipped take {take_name}."
                     )
                     continue
+
                 curr_undist_img_dir = os.path.join(undist_img_root, take_name)
                 os.makedirs(curr_undist_img_dir, exist_ok=True)
                 # Extract undistorted aria images
@@ -117,7 +118,7 @@ def extract_aria_img(args):
             # Load GT annotation
             gt_anno_path = os.path.join(
                 args.gt_output_dir,
-                "annotation",
+                "annotations",
                 anno_type,
                 f"ego_pose_gt_anno_{split}_public.json",
             )
@@ -153,11 +154,16 @@ def extract_aria_img(args):
                     "frame_aligned_videos",
                     f"{ego_aria_cam_name}_214-1.mp4",
                 )
+
+
                 if not os.path.exists(curr_take_video_path):
                     print(
                         f"[Warning] No frame aligned videos found at {curr_take_video_path}. Skipped take {take_name}."
                     )
                     continue
+
+
+
                 curr_take_img_output_path = os.path.join(img_output_root, take_name)
                 os.makedirs(curr_take_img_output_path, exist_ok=True)
                 reader = PyAvReader(
@@ -168,6 +174,8 @@ def extract_aria_img(args):
                     stride=1,
                     gpu_idx=-1,
                 )
+
+
                 # Extract frames
                 for frame_number in tqdm(take_anno.keys(), total=len(take_anno.keys())):
                     f_idx = int(frame_number)
@@ -187,7 +195,7 @@ def save_test_gt_anno(output_dir, gt_anno_private):
     with open(
         os.path.join(output_dir, f"ego_pose_gt_anno_test_private.json"), "w"
     ) as f:
-        json.dump(gt_anno_private, f)
+        json.dump(gt_anno_private, f, indent=4)
     # 2. Exclude GT 2D & 3D joints and valid flag information for public un-annotated test file
     gt_anno_public = copy.deepcopy(gt_anno_private)
     for _, take_anno in gt_anno_public.items():
@@ -203,7 +211,7 @@ def save_test_gt_anno(output_dir, gt_anno_private):
                 frame_anno.pop(k)
     # 3. Save public un-annotated test JSON file
     with open(os.path.join(output_dir, f"ego_pose_gt_anno_test_public.json"), "w") as f:
-        json.dump(gt_anno_public, f)
+        json.dump(gt_anno_public, f, indent=4)
 
 
 def create_gt_anno(args):
@@ -224,7 +232,7 @@ def create_gt_anno(args):
             # Get ground truth annotation
             gt_anno = ego_pose_anno_loader(args, split, anno_type)
             gt_anno_output_dir = os.path.join(
-                args.gt_output_dir, "annotation", anno_type
+                args.gt_output_dir, "annotations", anno_type
             )
             os.makedirs(gt_anno_output_dir, exist_ok=True)
             # Save ground truth JSON file
@@ -235,7 +243,7 @@ def create_gt_anno(args):
                     ),
                     "w",
                 ) as f:
-                    json.dump(gt_anno.db, f)
+                    json.dump(gt_anno.db, f, indent=4)
             # For test split, create two versions of GT-anno
             else:
                 if len(gt_anno.db) == 0:
@@ -301,7 +309,7 @@ def create_aria_calib(args):
         ) / 2
         # Save updated JSON calib file
         with open(os.path.join(output_path), "w") as f:
-            json.dump(aria_calib_json, f)
+            json.dump(aria_calib_json, f, indent=4)
 
 
 def main(args):

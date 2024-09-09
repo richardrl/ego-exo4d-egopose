@@ -162,6 +162,9 @@ def world_to_cam(kpts, extri):
     """
     new_kpts = kpts.copy()
     new_kpts = np.append(new_kpts, np.ones((new_kpts.shape[0], 1)), axis=1).T  # (4,N)
+
+    # extri is world wrt to cam
+    # this gives us kypts wrt to cam
     new_kpts = (extri @ new_kpts).T  # (N,3)
     return new_kpts
 

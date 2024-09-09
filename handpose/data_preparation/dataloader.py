@@ -138,7 +138,10 @@ class ego_pose_anno_loader:
                     )
                     # Append into dataset if has at least valid annotation
                     if len(curr_take_data) > 0:
+                        print(f"adding to db: {curr_take_uid}")
                         gt_db[curr_take_uid] = curr_take_data
+                    else:
+                        print(f"not enough hands, skipping: {curr_take_uid}")
         return gt_db
 
     def load_take_raw_data(
@@ -251,6 +254,11 @@ class ego_pose_anno_loader:
                 curr_frame_anno[
                     f"{hand_name}_hand_valid_3d"
                 ] = valid_3d_kpts_flag.tolist()
+
+                # new: add the world camera frame
+                curr_frame_anno[
+                    f"cam_extrinsic"
+                ] = curr_extri.copy().tolist()
 
             # Append current frame into GT JSON if at least one valid hand exists
             if at_least_one_hands_valid:
