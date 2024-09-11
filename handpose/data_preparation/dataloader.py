@@ -65,6 +65,9 @@ class ego_pose_anno_loader:
             self.dataset_root, f"annotations/ego_pose/{split}/camera_pose"
         )
 
+        self.num_valid_samples = 0
+        self.num_invalid_samples = 0
+
         # Load dataset
         self.db = self.load_raw_data()
 
@@ -236,12 +239,17 @@ class ego_pose_anno_loader:
                             self.undist_img_dim,
                             self.bbox_padding,
                         )
+                    self.num_valid_samples += 1
+                    print("Added because enough 3D keypoints")
                 # If no valid annotation for current hand, assign empty bbox, anno and valid flag
                 else:
+                    print("Skipping because not enough 3D keypoints")
+
                     one_hand_bbox = np.array([])
                     one_hand_filtered_3d_kpts_cam = np.array([])
                     one_hand_filtered_anno_2d_kpts = np.array([])
                     valid_3d_kpts_flag = np.array([])
+                    self.num_invalid_samples += 1
 
                 # Compose current hand GT info in current frame
                 curr_frame_anno[

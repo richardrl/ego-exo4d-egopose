@@ -231,6 +231,13 @@ def create_gt_anno(args):
                 print("[Warning] No test gt-anno will be generated on auto data. Skipped for now.")
             # Get ground truth annotation
             gt_anno = ego_pose_anno_loader(args, split, anno_type)
+
+            print("Results")
+            print(gt_anno.num_valid_samples)
+            print(gt_anno.num_invalid_samples)
+
+            import pdb
+            pdb.set_trace()
             gt_anno_output_dir = os.path.join(
                 args.gt_output_dir, "annotations", anno_type
             )
