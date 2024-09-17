@@ -20,7 +20,7 @@ import pyvrs
 def sort_f(filepath):
     return int(os.path.basename(filepath).split(".jpg")[0])
 
-def undistort_take(input_tuple):
+def undistort_take_single(input_tuple):
     take_name, args, dist_img_root, undist_img_root = input_tuple
     # Get aria calibration model and pinhole camera model
     curr_aria_calib_json_path = os.path.join(
@@ -115,16 +115,21 @@ def undistort_aria_img(args):
         print(f"Using {available_cpus} number of CPUs")
         P = multiprocessing.Pool(available_cpus - 2)
 
-        for _ in tqdm(P.imap_unordered(undistort_take, zip(args.take_folder_list,
-                                                           [args] * len(args.take_folder_list),
-                                                           [dist_img_root] * len(args.take_folder_list),
-                                                           [undist_img_root] * len(args.take_folder_list))),
-                      total=len(args.take_folder_list)):
-            pass
+        try:
+            for _ in tqdm(P.imap_unordered(undistort_take_single, zip(args.take_folder_list,
+                                                               [args] * len(args.take_folder_list),
+                                                               [dist_img_root] * len(args.take_folder_list),
+                                                               [undist_img_root] * len(args.take_folder_list))),
+                          total=len(args.take_folder_list)):
+                pass
+        except Exception as error:
+            print("Child process failed")
+            import sys
+            sys.exit(1)
     else:
         for take_idx, take_name in enumerate(args.take_folder_list):
             # print(f"[{take_idx+1}/{len(args.take_folder_list)}] processing {take_name}")
-            undistort_take(take_name, args, dist_img_root, undist_img_root)
+            undistort_take_single(take_name, args, dist_img_root, undist_img_root)
 
 def decode_video(video_path, save_dir):
     os.makedirs(save_dir, exist_ok=True)
@@ -429,11 +434,19 @@ def create_aria_calib(args):
 
     splits_json = json.load(open(os.path.join(args.ego4d_data_dir, "annotations/splits.json")))
 
-    split_uids = splits_json['split_to_take_uids'][args.split]
+    takes_json_lst = json.load(open(os.path.join(args.ego4d_data_dir, "takes.json")))
+
+    def get_take_uid_from_take_name(take_name):
+        return [take['take_uid'] for take in takes_json_lst if take['take_name'] == take_name][0]
+
+    if args.split:
+        split_uids = splits_json['split_to_take_uids'][args.split]
+    else:
+        split_uids = [get_take_uid_from_take_name(take_name) for take_name in args.take_folder_list]
+
     # Create aria calib JSON output directory
     aria_calib_json_output_dir = os.path.join(args.gt_output_dir, "aria_calib_json")
     os.makedirs(aria_calib_json_output_dir, exist_ok=True)
-
     # Find uid and take info
     takes = json.load(open(os.path.join(args.ego4d_data_dir, "takes.json")))
     take_to_uid = {
@@ -488,7 +501,7 @@ if __name__ == "__main__":
         "--split",
         type=str,
         # nargs="+",
-        default=["train", "val", "test"],
+        # default=["train", "val", "test"],
         help="train/val/test split of the dataset",
     )
 
@@ -560,6 +573,7 @@ if __name__ == "__main__":
 
     if args.split:
         print("Split specified, scanning for take list")
+        print(args.split)
 
         # /data/pulkitag/models/rli14/data/egoexo/annotations/splits.json
 
