@@ -20,4 +20,4 @@ micromamba activate
 
 micromamba activate --prefix=/data/scratch-oc40/pulkitag/rli14/micromamba/ego4d_cli_scratchoc40
 
-python3 main_v2.py --steps extract_aria_img undistort_aria_img --ego4d_data_dir /data/pulkitag/models/rli14/data/egoexo --gt_output_dir /data/pulkitag/models/rli14/data/egoexo_hand_gen --portrait_view --split="val" 09102024_egoexoval_full --resolution=448 --mp
+python3 main_v2.py --steps create_aria_calib extract_aria_img undistort_aria_img --ego4d_data_dir /data/pulkitag/models/rli14/data/egoexo --gt_output_dir /data/pulkitag/models/rli14/data/egoexo_hand_gen --portrait_view --split="val" 09102024_egoexoval_full --resolution=448 --mp

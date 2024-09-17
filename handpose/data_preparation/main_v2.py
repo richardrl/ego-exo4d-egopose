@@ -130,6 +130,7 @@ def undistort_aria_img(args):
         for take_idx, take_name in enumerate(args.take_folder_list):
             # print(f"[{take_idx+1}/{len(args.take_folder_list)}] processing {take_name}")
             undistort_take_single(take_name, args, dist_img_root, undist_img_root)
+    print("Undistort aria image all done!")
 
 def decode_video(video_path, save_dir):
     os.makedirs(save_dir, exist_ok=True)
@@ -274,7 +275,7 @@ def extract_aria_img(args):
 
             print(f"Decoding to: {curr_take_img_output_path}")
             decode_video(curr_take_video_path, curr_take_img_output_path)
-
+    print("Extract aria img all done!")
 
 def save_test_gt_anno(output_dir, gt_anno_private):
     # 1. Save private annotated test JSON file
@@ -478,6 +479,7 @@ def create_aria_calib(args):
         for take_name, take_uid in tqdm(take_to_uid.items()):
             take = [t for t in takes if t["take_name"] == take_name][0]
             create_single_json([take_name, take, aria_calib_json_output_dir])
+    print("Create aria calib all done!")
 
 def main(args):
     for step in args.steps:
